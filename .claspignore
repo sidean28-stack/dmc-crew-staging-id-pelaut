@@ -1,0 +1,6 @@
+# Ignore everything by default
+**
+
+# Unignore only production Apps Script backend files
+!google_apps_script.gs
+!appsscript.json

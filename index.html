@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Sistem Data & Katalog Crew | Maritime Authority - PT ALINDA PRIMA SENTOSA</title>
+  <!-- Maritime Authority Typography Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20260823.17">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Excel Parser -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- Version enforcement: force reload if old cached version detected -->
+  <script>
+    (function() {
+      var expected = '20260823.17';
+      var tag = document.querySelector('link[href*="styles.css"]');
+      if (tag && tag.href.indexOf(expected) === -1) {
+        window.location.reload(true);
+      }
+    })();
+  </script>
+</head>
+<body>
+
+  <!-- ================= MANDATORY STARTUP LOGIN GATEKEEPER ================= -->
+  <div id="startupLoginGatekeeper" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 99999; background: linear-gradient(135deg, #090d16 0%, #0f172a 50%, #1e293b 100%); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div class="modal-card" style="max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); background: rgba(15, 23, 42, 0.94); border-radius: 16px; padding: 32px;">
+      
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(2, 132, 199, 0.2); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; border: 1px solid var(--accent);">
+          <i class="fa-solid fa-user-shield" style="font-size: 1.9rem; color: var(--accent);"></i>
+        </div>
+        <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 6px; color: #ffffff;">Sistem Data Crew Longline</h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem;">Wantaifeng International Co Ltd - PT ALINDA</p>
+        <div style="margin-top: 12px; padding: 6px 14px; background: rgba(255,255,255,0.06); border-radius: 20px; display: inline-block;">
+          <span style="font-size: 0.82rem; color: var(--accent); font-weight: 600;"><i class="fa-solid fa-lock"></i> Otentikasi Pengguna Wajib</span>
+        </div>
+      </div>
+
+      <form onsubmit="executeLogin(event)">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="font-weight: 600; font-size: 0.88rem; margin-bottom: 6px; display: block;"><i class="fa-solid fa-user" style="color: var(--accent);"></i> Username *</label>
+          <input type="text" id="loginUsername" class="form-control" placeholder="Masukkan Username" required style="padding: 10px 14px; border-radius: 8px;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label style="font-weight: 600; font-size: 0.88rem; margin-bottom: 6px; display: block;"><i class="fa-solid fa-key" style="color: var(--accent);"></i> Password *</label>
+          <input type="password" id="loginPassword" class="form-control" placeholder="Masukkan Password" required style="padding: 10px 14px; border-radius: 8px;">
+        </div>
+
+        <button type="submit" id="btnLoginSubmit" class="btn-primary" style="width: 100%; padding: 12px; font-size: 1rem; font-weight: 600; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <i class="fa-solid fa-right-to-bracket"></i> <span>Masuk ke Aplikasi</span>
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ================= PHASE 3: LOADING SYSTEM ================= -->
+  <div id="appLoadingOverlay" class="loading-overlay">
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <h2 style="color: white; margin-top: 20px;">Crew Selection Portal</h2>
+      <p id="loadingStatusText" style="color: var(--on-primary-container); margin-top: 10px;">Initializing System...</p>
+    </div>
+  </div>
+
+  <!-- ================= PHASE 4: GLOBAL ERROR HANDLER ================= -->
+  <div class="modal-overlay" id="globalErrorModal" style="z-index: 9999;">
+    <div class="modal-card" style="max-width: 450px; text-align: center; border-top: 4px solid var(--status-error);">
+      <h2 style="color: var(--status-error); margin-bottom: 15px;"><i class="fa-solid fa-triangle-exclamation"></i> Critical System Error</h2>
+      <p id="globalErrorMessage" style="margin-bottom: 20px; font-weight: 500;">An unexpected error occurred.</p>
+      <div id="globalErrorDetails" style="font-size: 0.8rem; background: var(--bg-surface-dim); padding: 10px; border-radius: 4px; color: var(--text-muted); text-align: left; margin-bottom: 20px; overflow-x: auto; max-height: 150px;">
+        <!-- Error stack trace goes here -->
+      </div>
+      <!-- Phase 6: Retry System -->
+      <button class="btn-primary" onclick="if(typeof retryBootstrap === 'function') retryBootstrap(); else location.reload();" style="width: 100%;">
+        <i class="fa-solid fa-rotate-right"></i> Retry Initialization
+      </button>
+    </div>
+  </div>
+
+  <div class="app-layout">
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-wrapper">
+        <div class="brand-logo">
+          <i class="fa-solid fa-anchor"></i>
+        </div>
+        <div class="brand-text">
+          <h1 data-i18n="appTitle">Sistem Data & Katalog Crew Longline</h1>
+          <p data-i18n="appSubtitle">Wantaifeng International Co Ltd - PT ALINDA PRIMA SENTOSA</p>
+        </div>
+      </div>
+      
+      <div class="header-controls">
+        <!-- Login / Logout Auth Controls -->
+        <div id="authControlWrapper" style="display: flex; align-items: center; gap: 6px;">
+          <button type="button" class="btn-primary" id="btnOpenLogin" onclick="openLoginModal()" style="padding: 5px 14px; font-size: 0.82rem; border-radius: 20px; font-weight: 600; cursor: pointer;">
+            <i class="fa-solid fa-lock"></i> <span>Login Sistem</span>
+          </button>
+          <button type="button" class="btn-secondary" id="btnExecuteLogout" onclick="executeLogout()" style="display: none; padding: 5px 12px; font-size: 0.82rem; border-radius: 20px; color: var(--status-error); border-color: var(--status-error); cursor: pointer;">
+            <i class="fa-solid fa-right-from-bracket"></i> <span>Keluar</span>
+          </button>
+        </div>
+
+        <!-- Role Selector Dropdown -->
+        <div class="role-selector-wrapper">
+          <span class="role-icon"><i class="fa-solid fa-user-shield"></i></span>
+          <select id="userRoleSelect" onchange="switchRole(this.value)">
+            <option value="superadmin" data-i18n="roleSuperAdmin">Super Admin</option>
+            <option value="admin" data-i18n="roleAdmin">Admin Manning Agency</option>
+            <option value="owner" data-i18n="roleOwner">Ship Owner (Katalog & Booking)</option>
+            <option value="candidate" data-i18n="roleCandidate">Kandidat Kru (Form Wizard)</option>
+          </select>
+        </div>
+
+        <!-- Language Switcher -->
+        <div class="lang-switcher">
+          <button class="lang-btn active" id="btnLangID" onclick="switchLanguage('id')">
+            🇮🇩 <span data-i18n="langID">Bahasa Indonesia</span>
+          </button>
+          <button class="lang-btn" id="btnLangZH" onclick="switchLanguage('zh')">
+            🇨🇳 <span data-i18n="langZH">中文 (Mandarin)</span>
+          </button>
+        </div>
+
+        <!-- Theme Selector Dropdown -->
+        <div class="theme-selector-wrapper" style="display: flex; align-items: center; gap: 6px;">
+          <span style="color: var(--accent); font-size: 0.95rem; margin-right: 2px;"><i class="fa-solid fa-palette"></i></span>
+          <select id="appThemeSelect" class="form-control" onchange="changeTheme(this.value)" style="width: auto; padding: 4px 10px; font-size: 0.82rem; border-radius: 20px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); color: var(--text-main); cursor: pointer;">
+            <option value="dark-glass" data-i18n="themeDarkGlass">🌌 Dark Ocean Transparan</option>
+            <option value="light-crystal" data-i18n="themeLightCrystal">☀️ Light Crystal Transparan</option>
+            <option value="cyber-midnight" data-i18n="themeCyber">💜 Cyberpunk Transparan</option>
+            <option value="emerald-glass" data-i18n="themeEmerald">🌲 Emerald Glass Transparan</option>
+            <option value="midnight-slate" data-i18n="themeSlate">🔲 Slate Transparan</option>
+            <option value="dark-vibrant" data-i18n="themeDarkVibrant">🔥 Dark Vibrant Transparan</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs" id="mainNavTabs">
+    <button class="tab-link active" id="tabBtnForm" onclick="switchTab('form')">
+      <i class="fa-solid fa-file-pen"></i> <span data-i18n="tabForm">Formulir Kru Baru</span>
+    </button>
+    <button class="tab-link" id="tabBtnCatalog" onclick="switchTab('catalog')">
+      <i class="fa-solid fa-ship"></i> <span data-i18n="tabCatalog">Katalog Kru (Ship Owner)</span>
+    </button>
+    <button class="tab-link" id="tabBtnDirectory" onclick="switchTab('directory')">
+      <i class="fa-solid fa-database"></i> <span data-i18n="tabDirectory">Manajemen Database (Admin)</span>
+    </button>
+  </nav>
+
+  <main class="main-wrapper">
+
+    <!-- Active Token / Security Banner (If accessed via One-Time Link) -->
+    <div class="security-banner" id="securityTokenBanner" style="display: none;">
+      <i class="fa-solid fa-key"></i>
+      <span id="securityBannerText">One-Time Access Link Aktif: Data Unmasked & Watermark Diterapkan</span>
+    </div>
+
+    <!-- Connection Status Banner -->
+    <div class="connection-status-bar" id="connectionStatusBar">
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        <span id="gasStatusText" data-i18n="gasStatusConnected">Terhubung dengan Google Cloud / Apps Script API (Live Production)</span>
+      </div>
+    </div>
+
+    <!-- TAB 1: FORM WIZARD (KANDIDAT KRU) -->
+    <section id="formTabSection">
+      <!-- Multi-Step Linear Progress Bar -->
+      <div class="wizard-progress">
+        <div class="wizard-progress-fill" id="wizardProgressFill"></div>
+        
+        <div class="step-item active" id="stepIndicator1" onclick="goToStep(1)">
+          <div class="step-circle">1</div>
+          <div class="step-label" data-i18n="step1Title">1. Data Diri & Posisi</div>
+        </div>
+        <div class="step-item" id="stepIndicator2" onclick="goToStep(2)">
+          <div class="step-circle">2</div>
+          <div class="step-label" data-i18n="step2Title">2. Kualifikasi & Berlayar</div>
+        </div>
+        <div class="step-item" id="stepIndicator3" onclick="goToStep(3)">
+          <div class="step-circle">3</div>
+          <div class="step-label" data-i18n="step3Title">3. Dokumen & Legalitas</div>
+        </div>
+        <div class="step-item" id="stepIndicator4" onclick="goToStep(4)">
+          <div class="step-circle">4</div>
+          <div class="step-label" data-i18n="step4Title">4. Upload Foto Dokumen</div>
+        </div>
+        <div class="step-item" id="stepIndicator5" onclick="goToStep(5)">
+          <div class="step-circle">5</div>
+          <div class="step-label" data-i18n="step5Title">5. Review & Submit</div>
+        </div>
+      </div>
+
+      <form id="crewForm" onsubmit="event.preventDefault();">
+
+        <!-- STEP 1: PERSONAL DETAILS, LONGLINE POSITION, ADDRESS & FAMILY CONTACTS -->
+        <div class="form-card step-panel" id="stepPanel1">
+          <div class="section-header">
+            <h2><i class="fa-solid fa-user-gear"></i> <span data-i18n="step1Title">1. Data Diri & Posisi Longline</span></h2>
+            <p data-i18n="step1Desc">Informasi personal, posisi & alamat lengkap crew</p>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group col-6">
+              <label><span data-i18n="fullName">Nama Lengkap Crew (全名)</span> <span class="required-star">*</span></label>
+              <input type="text" id="fullName" class="form-control" placeholder="Nama sesuai Paspor / KTP" required>
+            </div>
+
+            <div class="form-group col-6">
+              <label><span data-i18n="chineseName">Nama Mandarin (中文姓名 - Opsional)</span></label>
+              <input type="text" id="chineseName" class="form-control" placeholder="例如: 张伟 (Zhang Wei)">
+            </div>
+
+            <div class="form-group col-6">
+              <label><span data-i18n="rankPosition">Jabatan / Posisi Longline (职务)</span> <span class="required-star">*</span></label>
+              <select id="rankPosition" class="form-control" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+            <div class="form-group col-3">
+              <label><span data-i18n="gender">Jenis Kelamin (性别)</span> <span class="required-star">*</span></label>
+              <select id="gender" class="form-control" required>
+                <option value="Male" data-i18n="male">Laki-laki (男)</option>
+                <option value="Female" data-i18n="female">Perempuan (女)</option>
+              </select>
+            </div>
+
+            <div class="form-group col-3">
+              <label><span data-i18n="pob">Tempat Lahir (出生地点)</span> <span class="required-star">*</span></label>
+              <input type="text" id="pob" class="form-control" placeholder="Kota Kelahiran" required>
+            </div>
+
+            <div class="form-group col-4">
+              <label><span data-i18n="dob">Tanggal Lahir (出生日期)</span> <span class="required-star">*</span></label>
+              <input type="date" id="dob" class="form-control" required>
+            </div>
+
+            <div class="form-group col-4">
+              <label><span data-i18n="religion">Agama (宗教)</span></label>
+              <select id="religion" class="form-control">
+                <option value="Islam">Islam (伊斯兰教)</option>
+                <option value="Protestant">Kristen (基督教)</option>
+                <option value="Catholic">Katolik (天主教)</option>
+                <option value="Buddhism">Buddha (佛教)</option>
+                <option value="Hinduism">Hindu (印度教)</option>
+              </select>
+            </div>
+
+            <div class="form-group col-4">
+              <label><span data-i18n="maritalStatus">Status Perkawinan (婚姻状况)</span></label>
+              <select id="maritalStatus" class="form-control">
+                <option value="Single" data-i18n="single">Belum Menikah (未婚)</option>
+                <option value="Married" data-i18n="married">Menikah (已婚)</option>
+                <option value="Divorced" data-i18n="divorced">Cerai (离异)</option>
+              </select>
+            </div>
+
+            <div class="form-group col-4">
+              <label><span data-i18n="bloodType">Golongan Darah (血型)</span></label>
+              <select id="bloodType" class="form-control">
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="AB">AB</option>
+                <option value="O">O</option>
+              </select>
+            </div>
+
+            <div class="form-group col-4">
+              <label><span data-i18n="shirtSize">Ukuran Baju (服装尺寸)</span></label>
+              <select id="shirtSize" class="form-control">
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+                <option value="XXL">XXL</option>
+                <option value="XXXL">XXXL</option>
+              </select>
+            </div>
+
+            <div class="form-group col-4">
+              <label><span data-i18n="shoeSize">Ukuran Sepatu Safety (鞋码)</span></label>
+              <select id="shoeSize" class="form-control">
+                <option value="38">38</option>
+                <option value="39">39</option>
+                <option value="40">40</option>
+                <option value="41">41</option>
+                <option value="42">42</option>
+                <option value="43">43</option>
+                <option value="44">44</option>
+                <option value="45">45</option>
+                <option value="46">46</option>
+              </select>
+            </div>
+
+            <div class="form-group col-4">
+              <label><span data-i18n="heightCm">Tinggi Badan (cm)</span> <span class="required-star">*</span></label>
+              <input type="number" id="heightCm" class="form-control" min="120" max="220" step="1" inputmode="numeric" data-i18n-placeholder="heightCmPlaceholder" placeholder="Contoh: 170" required>
+            </div>
+
+            <div class="form-group col-4">
+              <label><span data-i18n="weightKg">Berat Badan (kg)</span> <span class="required-star">*</span></label>
+              <input type="number" id="weightKg" class="form-control" min="35" max="180" step="1" inputmode="numeric" data-i18n-placeholder="weightKgPlaceholder" placeholder="Contoh: 65" required>
+            </div>
+
+            <!-- ALAMAT LENGKAP CREW -->
+            <div class="col-12" style="margin-top: 10px;">
+              <h3 style="color: var(--primary); font-size: 1rem; margin-bottom: 12px; border-bottom: 1px dashed var(--border-subtle); padding-bottom: 6px;">
+                <i class="fa-solid fa-house-user"></i> Alamat Lengkap Crew (Hasil Digabungkan di Sheet)
+              </h3>
+            </div>
+
+            <div class="form-group col-6">
+              <label><span data-i18n="streetAddress">Jalan (街道/门牌号)</span> <span class="required-star">*</span></label>
+              <input type="text" id="streetAddress" class="form-control" placeholder="Jl. Merdeka No. 123" required>
+            </div>
+
+            <div class="form-group col-3">
+              <label><span data-i18n="rtRw">RT / RW</span> <span class="required-star">*</span></label>
+              <input type="text" id="rtRw" class="form-control" placeholder="002/005" required>
+            </div>
+
+            <div class="form-group col-3">
+              <label><span data-i18n="village">Kelurahan / Desa (Kel/Desa)</span> <span class="required-star">*</span></label>
+              <input type="text" id="village" class="form-control" placeholder="Kel. Sukamaju" required>
+            </div>
+
+            <div class="form-group col-4">
+              <label><span data-i18n="district">Kecamatan (乡镇)</span> <span class="required-star">*</span></label>
+              <input type="text" id="district" class="form-control" placeholder="Kec. Cilincing" required>
+            </div>
+
+            <div class="form-group col-4">
+              <label><span data-i18n="city">Kabupaten / Kota (城市/县)</span> <span class="required-star">*</span></label>
+              <input type="text" id="city" class="form-control" placeholder="Jakarta Utara" required>
+            </div>
+
+            <div class="form-group col-4">
+              <label><span data-i18n="province">Provinsi (省份)</span> <span class="required-star">*</span></label>
+              <input type="text" id="province" class="form-control" placeholder="DKI Jakarta" required>
+            </div>
+
+            <div class="form-group col-12">
+              <label><span data-i18n="phoneNo">Nomor HP / WhatsApp Aktif</span> <span class="required-star">*</span></label>
+              <input type="tel" id="phoneNo" class="form-control" placeholder="+62 812-3456-7890" required>
+            </div>
+
+            <!-- KONTAK KELUARGA (MIN 2 HARUS DIISI) -->
+            <div class="col-12" style="margin-top: 14px;">
+              <div style="background: var(--secondary-container); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: var(--radius-md);">
+                <h4 style="color: var(--primary-container); margin-bottom: 2px;" data-i18n="familyNotice">
+                  Data Keluarga Crew Minimal 2 Harus Diisi Untuk Kelengkapan Data dan Keadaan Darurat
+                </h4>
+              </div>
+            </div>
+
+            <!-- KONTAK KELUARGA 1 -->
+            <div class="form-group col-6" style="background: var(--bg-primary); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+              <h4 style="color: var(--primary-container); margin-bottom: 10px;" data-i18n="family1Title">Kontak Keluarga 1 *</h4>
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label data-i18n="famName">Nama Lengkap Keluarga (全名)</label>
+                <input type="text" id="fam1Name" class="form-control" placeholder="Nama Orang Tua / Istri" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label data-i18n="famRelation">Hubungan (Istri/Orang Tua/Saudara)</label>
+                <input type="text" id="fam1Relation" class="form-control" placeholder="Istri / Orang Tua" required>
+              </div>
+              <div class="form-group">
+                <label data-i18n="famPhone">Nomor Telp / WhatsApp Aktif</label>
+                <input type="tel" id="fam1Phone" class="form-control" placeholder="+62 813-xxxx-xxxx" required>
+              </div>
+            </div>
+
+            <!-- KONTAK KELUARGA 2 -->
+            <div class="form-group col-6" style="background: var(--bg-primary); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+              <h4 style="color: var(--primary-container); margin-bottom: 10px;" data-i18n="family2Title">Kontak Keluarga 2 *</h4>
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label data-i18n="famName">Nama Lengkap Keluarga (全名)</label>
+                <input type="text" id="fam2Name" class="form-control" placeholder="Nama Kakak / Adik / Saudara" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label data-i18n="famRelation">Hubungan (Istri/Orang Tua/Saudara)</label>
+                <input type="text" id="fam2Relation" class="form-control" placeholder="Saudara Kandung" required>
+              </div>
+              <div class="form-group">
+                <label data-i18n="famPhone">Nomor Telp / WhatsApp Aktif</label>
+                <input type="tel" id="fam2Phone" class="form-control" placeholder="+62 812-xxxx-xxxx" required>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- STEP 2: LONGLINE QUALIFICATIONS & SAILING HISTORY -->
+        <div class="form-card step-panel" id="stepPanel2" style="display: none;">
+          <div class="section-header">
+            <h2><i class="fa-solid fa-ship"></i> <span data-i18n="qualSectionTitle">KUALIFIKASI CREW 船员资格 (Khusus Kapal Longline)</span></h2>
+            <p data-i18n="step2Desc">Pengalaman longline, riwayat kapal & skill</p>
+          </div>
+
+          <div class="form-grid">
+            
+            <!-- Pengalaman Longline Radio Choices -->
+            <div class="form-group col-12" style="background: var(--bg-primary); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+              <label style="font-size: 0.9rem; color: var(--primary); font-weight: 700; margin-bottom: 12px; display: block;" data-i18n="expLonglineTitle">
+                Pengalaman Longline (Manual, Snap Atas, Snap Bawah) *
+              </label>
+              <div id="longlineQualContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px;">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Sailing History Section -->
+            <div class="col-12" style="margin-top: 12px;">
+              <h3 style="color: var(--primary); font-size: 1rem; margin-bottom: 10px;" data-i18n="sailingHistoryTitle">PENGALAMAN BERLAYAR 航海经验</h3>
+            </div>
+
+            <div class="col-12 sailing-history-grid">
+              <fieldset class="sailing-history-entry">
+                <legend>1. Pengalaman Berlayar / 航海经验</legend>
+                <div class="form-group"><label>Nama Kapal / 船名</label><input type="text" id="vesselName1" class="form-control" placeholder="Contoh: Fu Yuan Yu 888"></div>
+                <div class="form-group"><label>Sign On / Off</label><input type="text" id="signOnOff1" class="form-control" placeholder="Contoh: 2022 - 2024"></div>
+                <div class="form-group"><label>Negara Penempatan / 工作地点</label><select id="placementCountry1" class="form-control sailing-placement"></select></div>
+              </fieldset>
+              <fieldset class="sailing-history-entry">
+                <legend>2. Pengalaman Berlayar / 航海经验</legend>
+                <div class="form-group"><label>Nama Kapal / 船名</label><input type="text" id="vesselName2" class="form-control" placeholder="Nama kapal kedua"></div>
+                <div class="form-group"><label>Sign On / Off</label><input type="text" id="signOnOff2" class="form-control" placeholder="Contoh: 2020 - 2022"></div>
+                <div class="form-group"><label>Negara Penempatan / 工作地点</label><select id="placementCountry2" class="form-control sailing-placement"></select></div>
+              </fieldset>
+              <fieldset class="sailing-history-entry">
+                <legend>3. Pengalaman Berlayar / 航海经验</legend>
+                <div class="form-group"><label>Nama Kapal / 船名</label><input type="text" id="vesselName3" class="form-control" placeholder="Nama kapal ketiga"></div>
+                <div class="form-group"><label>Sign On / Off</label><input type="text" id="signOnOff3" class="form-control" placeholder="Contoh: 2018 - 2020"></div>
+                <div class="form-group"><label>Negara Penempatan / 工作地点</label><select id="placementCountry3" class="form-control sailing-placement"></select></div>
+              </fieldset>
+            </div>
+
+            <div class="form-group col-6">
+              <label data-i18n="vesselTypeLongline">13. Jenis Kapal 船舶类型:</label>
+              <select id="vesselTypeLongline" class="form-control">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+            <div class="form-group col-6">
+              <label data-i18n="vesselOrigin">14. Asal Kapal 船只的来源:</label>
+              <select id="vesselOrigin" class="form-control">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+            <!-- Skill Umum Checkboxes -->
+            <div class="form-group col-12" style="margin-top: 12px; background: var(--bg-primary); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+              <label style="font-size: 0.9rem; color: var(--primary); font-weight: 700; margin-bottom: 10px; display: block;" data-i18n="skillGeneralTitle">
+                SKILL UMUM 通用技能
+              </label>
+              <div id="skillGeneralContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px;">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- STEP 3: DOCUMENTS CHECKLIST & NUMBERS -->
+        <div class="form-card step-panel" id="stepPanel3" style="display: none;">
+          <div class="section-header">
+            <h2><i class="fa-solid fa-id-card-clip"></i> <span data-i18n="docChecklistTitle">KELENGKAPAN DOKUMEN & SERTIFIKAT</span></h2>
+            <p data-i18n="step3Desc">Status dokumen, nomor paspor & buku pelaut</p>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group col-6">
+              <label><span data-i18n="passportNo">Nomor Paspor (No. Paspor)</span> <span class="required-star">*</span></label>
+              <input type="text" id="passportNo" class="form-control" placeholder="C1234567" required>
+            </div>
+
+            <div class="form-group col-6">
+              <label><span data-i18n="passportExpiry">Expired Paspor (Kalender)</span> <span class="required-star">*</span></label>
+              <input type="date" id="passportExpiry" class="form-control" required>
+            </div>
+
+            <div class="form-group col-6">
+              <label><span data-i18n="cdcNo">No. Seaman Book (海员证)</span> <span class="required-star">*</span></label>
+              <input type="text" id="cdcNo" class="form-control" placeholder="E012345" required>
+            </div>
+
+            <div class="form-group col-6">
+              <label><span data-i18n="cdcExpiry">Seaman Book Expired (Kalender)</span> <span class="required-star">*</span></label>
+              <input type="date" id="cdcExpiry" class="form-control" required>
+            </div>
+
+            <div class="form-group col-6">
+              <label><span data-i18n="bstExpiry">Sertifikat BST Expired (Kalender)</span></label>
+              <input type="date" id="bstExpiry" class="form-control">
+            </div>
+
+            <div class="form-group col-6">
+              <label data-i18n="kkStatus">Kartu Keluarga (KK)</label>
+              <select id="kkStatus" class="form-control">
+                <option value="Asli">Asli</option>
+                <option value="FC">FC (Fotokopi)</option>
+              </select>
+            </div>
+
+            <div class="form-group col-6">
+              <label data-i18n="akteStatus">Akte Kelahiran</label>
+              <select id="akteStatus" class="form-control">
+                <option value="Asli">Asli</option>
+                <option value="FC">FC (Fotokopi)</option>
+              </select>
+            </div>
+
+            <div class="form-group col-6">
+              <label data-i18n="ijazahLevel">Ijazah Sekolah (SMP/SMA sederajat)</label>
+              <select id="ijazahLevel" class="form-control">
+                <option value="SMP_Asli">SMP - Asli (初中 - 原件)</option>
+                <option value="SMP_FC">SMP - FC (初中 - 复印件)</option>
+                <option value="SMA_Asli">SMA Sederajat - Asli (高中/中专 - 原件)</option>
+                <option value="SMA_FC">SMA Sederajat - FC (高中/中专 - 复印件)</option>
+                <option value="Tidak_Ada">Tidak Ada (无)</option>
+              </select>
+            </div>
+
+            <div class="form-group col-4">
+              <label data-i18n="medicalStatus">Surat Medical Check-Up / MCU (体检报告)</label>
+              <select id="medicalStatus" class="form-control">
+                <option value="Ada">Ada (有)</option>
+                <option value="TidakAda">Tidak Ada (无)</option>
+              </select>
+            </div>
+
+            <div class="form-group col-4">
+              <label data-i18n="waliStatus">Surat Ijin Wali</label>
+              <select id="waliStatus" class="form-control">
+                <option value="Ada">Ada (有)</option>
+                <option value="TidakAda">Tidak Ada (无)</option>
+              </select>
+            </div>
+
+            <div class="form-group col-4">
+              <label data-i18n="skckStatus">Surat SKCK (Kepolisian)</label>
+              <select id="skckStatus" class="form-control">
+                <option value="Ada">Ada (有)</option>
+                <option value="TidakAda">Tidak Ada (无)</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- STEP 4: UPLOAD DOCUMENT PHOTOS -->
+        <div class="form-card step-panel" id="stepPanel4" style="display: none;">
+          <div class="section-header">
+            <h2><i class="fa-solid fa-cloud-arrow-up"></i> <span data-i18n="step4Title">4. Upload Foto Dokumen</span></h2>
+            <p data-i18n="uploadNotice">Unggah dokumen pendukung (Format: JPG, PNG, atau PDF). Minimal 1 foto jelas per kategori dokumen wajib.</p>
+          </div>
+
+          <div class="upload-card-grid">
+            
+            <!-- 1. PASSPORT -->
+            <div class="doc-upload-card" id="docCardPassport">
+              <div class="doc-card-header">
+                <div class="doc-title" data-i18n="docPassport">Paspor / Passport (护照)</div>
+                <span class="doc-badge" id="badgePassport" data-i18n="minRequirement">Min. 1 Foto Wajib</span>
+              </div>
+              <div class="dropzone" id="dropzonePassport" onclick="triggerFileInput('filePassport')">
+                <i class="fa-solid fa-passport dropzone-icon"></i>
+                <p data-i18n="dropzoneHint">Tarik & Lepas gambar di sini, atau klik untuk memilih file</p>
+                <input type="file" id="filePassport" accept="image/*,.pdf" multiple hidden onchange="handleFileSelect(event, 'passport')">
+              </div>
+              <button class="btn-camera" onclick="openCameraModal('passport')">
+                <i class="fa-solid fa-camera"></i> <span data-i18n="cameraBtn">Ambil Foto Kamera</span>
+              </button>
+              <div class="thumb-gallery" id="galleryPassport"></div>
+              <div style="margin-top: 8px; display: flex; gap: 6px;">
+                <input type="text" id="linkInputPassport" class="form-control" placeholder="Atau tempel Link Google Drive..." style="padding: 6px 10px; font-size: 0.8rem; border-radius: 6px; flex: 1; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main);">
+                <button type="button" class="btn-secondary" onclick="addLinkDocFromInput('linkInputPassport', 'passport')" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; white-space: nowrap; cursor: pointer;"><i class="fa-solid fa-plus"></i> Link</button>
+              </div>
+            </div>
+
+            <!-- 2. KTP -->
+            <div class="doc-upload-card" id="docCardKtp">
+              <div class="doc-card-header">
+                <div class="doc-title" data-i18n="docKtp">KTP / Kartu Identitas (身份证)</div>
+                <span class="doc-badge" id="badgeKtp" data-i18n="minRequirement">Min. 1 Foto Wajib</span>
+              </div>
+              <div class="dropzone" id="dropzoneKtp" onclick="triggerFileInput('fileKtp')">
+                <i class="fa-solid fa-id-card dropzone-icon"></i>
+                <p data-i18n="dropzoneHint">Tarik & Lepas gambar di sini, atau klik untuk memilih file</p>
+                <input type="file" id="fileKtp" accept="image/*,.pdf" multiple hidden onchange="handleFileSelect(event, 'ktp')">
+              </div>
+              <button class="btn-camera" onclick="openCameraModal('ktp')">
+                <i class="fa-solid fa-camera"></i> <span data-i18n="cameraBtn">Ambil Foto Kamera</span>
+              </button>
+              <div class="thumb-gallery" id="galleryKtp"></div>
+              <div style="margin-top: 8px; display: flex; gap: 6px;">
+                <input type="text" id="linkInputKtp" class="form-control" placeholder="Atau tempel Link Google Drive..." style="padding: 6px 10px; font-size: 0.8rem; border-radius: 6px; flex: 1; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main);">
+                <button type="button" class="btn-secondary" onclick="addLinkDocFromInput('linkInputKtp', 'ktp')" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; white-space: nowrap; cursor: pointer;"><i class="fa-solid fa-plus"></i> Link</button>
+              </div>
+            </div>
+
+            <!-- 3. BUKU PELAUT / SEAMAN BOOK -->
+            <div class="doc-upload-card" id="docCardCdc">
+              <div class="doc-card-header">
+                <div class="doc-title" data-i18n="docCdc">Buku Pelaut / CDC / Seaman Book (海员证)</div>
+                <span class="doc-badge" id="badgeCdc" data-i18n="minRequirement">Min. 1 Foto Wajib</span>
+              </div>
+              <div class="dropzone" id="dropzoneCdc" onclick="triggerFileInput('fileCdc')">
+                <i class="fa-solid fa-book-bookmark dropzone-icon"></i>
+                <p data-i18n="dropzoneHint">Tarik & Lepas gambar di sini, atau klik untuk memilih file</p>
+                <input type="file" id="fileCdc" accept="image/*,.pdf" multiple hidden onchange="handleFileSelect(event, 'cdc')">
+              </div>
+              <button class="btn-camera" onclick="openCameraModal('cdc')">
+                <i class="fa-solid fa-camera"></i> <span data-i18n="cameraBtn">Ambil Foto Kamera</span>
+              </button>
+              <div class="thumb-gallery" id="galleryCdc"></div>
+              <div style="margin-top: 8px; display: flex; gap: 6px;">
+                <input type="text" id="linkInputCdc" class="form-control" placeholder="Atau tempel Link Google Drive..." style="padding: 6px 10px; font-size: 0.8rem; border-radius: 6px; flex: 1; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main);">
+                <button type="button" class="btn-secondary" onclick="addLinkDocFromInput('linkInputCdc', 'cdc')" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; white-space: nowrap; cursor: pointer;"><i class="fa-solid fa-plus"></i> Link</button>
+              </div>
+            </div>
+
+            <!-- 4. MEDICAL CHECK UP -->
+            <div class="doc-upload-card" id="docCardMedical">
+              <div class="doc-card-header">
+                <div class="doc-title">Surat Medical MCU (体检报告) <small data-i18n="docOptionalNotice">(Gambar Opsional)</small></div>
+                <span class="doc-badge" id="badgeMedical">Opsional</span>
+              </div>
+              <div class="dropzone" id="dropzoneMedical" onclick="triggerFileInput('fileMedical')">
+                <i class="fa-solid fa-notes-medical dropzone-icon"></i>
+                <p data-i18n="dropzoneHint">Tarik & Lepas gambar di sini, atau klik untuk memilih file</p>
+                <input type="file" id="fileMedical" accept="image/*,.pdf" multiple hidden onchange="handleFileSelect(event, 'medical')">
+              </div>
+              <button class="btn-camera" onclick="openCameraModal('medical')">
+                <i class="fa-solid fa-camera"></i> <span data-i18n="cameraBtn">Ambil Foto Kamera</span>
+              </button>
+              <div class="thumb-gallery" id="galleryMedical"></div>
+              <div style="margin-top: 8px; display: flex; gap: 6px;">
+                <input type="text" id="linkInputMedical" class="form-control" placeholder="Atau tempel Link Google Drive..." style="padding: 6px 10px; font-size: 0.8rem; border-radius: 6px; flex: 1; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main);">
+                <button type="button" class="btn-secondary" onclick="addLinkDocFromInput('linkInputMedical', 'medical')" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; white-space: nowrap; cursor: pointer;"><i class="fa-solid fa-plus"></i> Link</button>
+              </div>
+            </div>
+
+            <!-- 5. SERTIFIKAT BST -->
+            <div class="doc-upload-card" id="docCardCert">
+              <div class="doc-card-header">
+                <div class="doc-title">Sertifikat BST / STCW <small data-i18n="docOptionalNotice">(Gambar Opsional)</small></div>
+                <span class="doc-badge" id="badgeCert">Opsional</span>
+              </div>
+              <div class="dropzone" id="dropzoneCert" onclick="triggerFileInput('fileCert')">
+                <i class="fa-solid fa-file-contract dropzone-icon"></i>
+                <p data-i18n="dropzoneHint">Tarik & Lepas gambar di sini, atau klik untuk memilih file</p>
+                <input type="file" id="fileCert" accept="image/*,.pdf" multiple hidden onchange="handleFileSelect(event, 'cert')">
+              </div>
+              <button class="btn-camera" onclick="openCameraModal('cert')">
+                <i class="fa-solid fa-camera"></i> <span data-i18n="cameraBtn">Ambil Foto Kamera</span>
+              </button>
+              <div class="thumb-gallery" id="galleryCert"></div>
+              <div style="margin-top: 8px; display: flex; gap: 6px;">
+                <input type="text" id="linkInputCert" class="form-control" placeholder="Atau tempel Link Google Drive..." style="padding: 6px 10px; font-size: 0.8rem; border-radius: 6px; flex: 1; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main);">
+                <button type="button" class="btn-secondary" onclick="addLinkDocFromInput('linkInputCert', 'cert')" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; white-space: nowrap; cursor: pointer;"><i class="fa-solid fa-plus"></i> Link</button>
+              </div>
+            </div>
+
+            <!-- 6. FOTO PAS / FULL BODY -->
+            <div class="doc-upload-card" id="docCardPhoto">
+              <div class="doc-card-header">
+                <div class="doc-title" data-i18n="docPhoto">Foto Pas / Full Body Crew (免冠照/全身照)</div>
+                <span class="doc-badge" id="badgePhoto" data-i18n="minRequirement">Min. 1 Foto Wajib</span>
+              </div>
+              <div class="dropzone" id="dropzonePhoto" onclick="triggerFileInput('filePhoto')">
+                <i class="fa-solid fa-image dropzone-icon"></i>
+                <p data-i18n="dropzoneHint">Tarik & Lepas gambar di sini, atau klik untuk memilih file</p>
+                <input type="file" id="filePhoto" accept="image/*,.pdf" multiple hidden onchange="handleFileSelect(event, 'photo')">
+              </div>
+              <button class="btn-camera" onclick="openCameraModal('photo')">
+                <i class="fa-solid fa-camera"></i> <span data-i18n="cameraBtn">Ambil Foto Kamera</span>
+              </button>
+              <div class="thumb-gallery" id="galleryPhoto"></div>
+              <div style="margin-top: 8px; display: flex; gap: 6px;">
+                <input type="text" id="linkInputPhoto" class="form-control" placeholder="Atau tempel Link Google Drive..." style="padding: 6px 10px; font-size: 0.8rem; border-radius: 6px; flex: 1; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main);">
+                <button type="button" class="btn-secondary" onclick="addLinkDocFromInput('linkInputPhoto', 'photo')" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; white-space: nowrap; cursor: pointer;"><i class="fa-solid fa-plus"></i> Link</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- STEP 5: REVIEW & SUBMIT -->
+        <div class="form-card step-panel" id="stepPanel5" style="display: none;">
+          <div class="section-header">
+            <h2><i class="fa-solid fa-clipboard-check"></i> <span data-i18n="reviewTitle">Konfirmasi & Pernyataan Data Crew</span></h2>
+            <p data-i18n="reviewSubtitle">Silakan periksa kembali seluruh data dan foto dokumen sebelum dikirim.</p>
+          </div>
+
+          <!-- Summary View Container -->
+          <div id="reviewSummaryContainer" style="margin-bottom: 24px;"></div>
+
+          <div style="background: var(--bg-primary); border: 1px solid var(--border-subtle); padding: 14px; border-radius: var(--radius-md); margin-bottom: 20px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input type="checkbox" id="agreeTermsCheck" style="width: 16px; height: 16px;" required>
+              <span data-i18n="agreeTerms">Saya menyatakan bahwa seluruh data dan dokumen yang saya unggah adalah benar dan sah.</span>
+            </label>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap;">
+            <button type="button" class="btn-secondary" onclick="saveDraft()">
+              <i class="fa-solid fa-floppy-disk"></i> <span data-i18n="saveDraftBtn">Simpan Draf</span>
+            </button>
+            <button type="button" class="btn-submit" onclick="submitCrewForm()">
+              <i class="fa-solid fa-paper-plane"></i> <span data-i18n="submitBtn">Kirim Data Crew (Submit to Sheets & Drive)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Wizard Navigation Actions -->
+        <div class="wizard-actions">
+          <div class="btn-group-left">
+            <button type="button" class="btn-secondary" id="btnPrevStep" onclick="prevStep()" style="display: none;">
+              <i class="fa-solid fa-arrow-left"></i> <span data-i18n="prevBtn">Kembali</span>
+            </button>
+            <button type="button" class="btn-secondary" onclick="clearDraft()" style="color: var(--status-error);">
+              <i class="fa-solid fa-trash"></i> <span data-i18n="clearDraftBtn">Hapus Draf</span>
+            </button>
+          </div>
+          <div class="btn-group-right">
+            <button type="button" class="btn-primary" id="btnNextStep" onclick="nextStep()">
+              <span data-i18n="nextBtn">Lanjut</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </section>
+
+    <!-- TAB 2: SHIP OWNER CREW CATALOGUE & BOOKING BASKET -->
+    <section id="catalogTabSection" style="display: none;">
+      <div class="catalog-header-card">
+        <div>
+          <h2 data-i18n="catalogTitle"><i class="fa-solid fa-ship"></i> Katalog Kandidat Kru Kapal Ikan Longline</h2>
+          <p data-i18n="catalogDesc">Pilih kandidat kru berdedikasi tinggi untuk operasional kapal longline Taiwan & China</p>
+        </div>
+      </div>
+
+      <!-- Catalogue Filter Bar -->
+      <div class="catalog-filter-bar">
+        <div class="search-box" style="flex: 2;">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="catSearchInput" class="form-control" data-i18n-placeholder="catalogSearchPlaceholder" placeholder="Cari nama, skill, paspor..." onkeyup="renderCatalogGrid()">
+        </div>
+
+        <select id="catFilterRank" class="form-control" onchange="renderCatalogGrid()">
+          <option value="" data-i18n="filterRank">Semua Jabatan</option>
+        </select>
+
+        <select id="catFilterQual" class="form-control" onchange="renderCatalogGrid()">
+          <option value="" data-i18n="filterQual">Semua Kualifikasi Longline</option>
+        </select>
+
+        <select id="catFilterVessel" class="form-control" onchange="renderCatalogGrid()">
+          <option value="" data-i18n="filterVessel">Semua Jenis Kapal</option>
+        </select>
+
+        <select id="catFilterVesselName" class="form-control" onchange="renderCatalogGrid()">
+          <option value="" data-i18n="filterVesselName">Semua Nama Kapal</option>
+        </select>
+
+        <select id="catFilterStatus" class="form-control" onchange="renderCatalogGrid()">
+          <option value="" data-i18n="filterStatus">Semua Status Operasional</option>
+          <option value="ON_BOAT" data-i18n="statusOnBoat">ON_BOAT (Di Atas Kapal)</option>
+          <option value="SELECTED" data-i18n="statusSelected">SELECTED (Terpilih)</option>
+          <option value="STAND_BY" data-i18n="statusStandBy">STAND_BY</option>
+          <option value="ON_BOAT_SELECTED" data-i18n="statusOnBoatSelected">ON_BOAT & SELECTED</option>
+        </select>
+      </div>
+
+      <!-- Crew Cards Grid -->
+      <div class="catalog-grid" id="catalogGridContainer">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- TAB 3: ADMIN CREW DIRECTORY & DATABASE -->
+    <section id="directoryTabSection" style="display: none;">
+      <div class="form-card">
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+          <div>
+            <h2><i class="fa-solid fa-database"></i> <span data-i18n="adminTitle">Direktori Data Crew & Kelola Berkas</span></h2>
+            <p><span data-i18n="totalCrewCount">Total Crew Terdaftar</span>: <strong id="totalCrewCountText">0</strong></p>
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+            <button class="btn-secondary" id="btnAuditLog" onclick="openAuditLogModal()" style="display: none; border-color: var(--accent); color: var(--accent);">
+              <i class="fa-solid fa-clock-rotate-left"></i> <span>Riwayat Audit (Super Admin)</span>
+            </button>
+            <button class="btn-secondary" id="btnUserManagement" onclick="openUserManagementModal()" style="display: none; border-color: #a855f7; color: #c084fc;">
+              <i class="fa-solid fa-users-gear"></i> <span>Kelola User & Password (Super Admin)</span>
+            </button>
+            <button class="btn-primary" onclick="openOneTimeLinkModal()">
+              <i class="fa-solid fa-key"></i> <span data-i18n="generateOneTimeLink">Buat Link Sekali Pakai (One-Time Link)</span>
+            </button>
+            <button class="btn-secondary" onclick="exportDirectoryExcel()">
+              <i class="fa-solid fa-file-excel" style="color: #107c41;"></i> <span>Ekspor Excel (.xlsx)</span>
+            </button>
+            <button class="btn-secondary" onclick="document.getElementById('excelFileInput').click()">
+              <i class="fa-solid fa-file-excel"></i> <span>Import Excel</span>
+            </button>
+            <input type="file" id="excelFileInput" accept=".xlsx, .xls" style="display:none;" onchange="handleExcelImport(event)">
+            <span id="importProgressText" style="font-size: 0.9rem; font-weight: bold; color: var(--primary); display: none;"></span>
+          </div>
+        </div>
+
+        <div class="directory-controls">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="dirSearchInput" class="form-control" placeholder="Cari nama, jabatan, paspor..." onkeyup="filterDirectory()">
+          </div>
+          
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <select id="dirFilterRank" class="form-control" style="width: auto;" onchange="filterDirectory()">
+              <option value="" data-i18n="filterRank">Semua Jabatan</option>
+            </select>
+            <select id="dirFilterVesselName" class="form-control" style="width: auto;" onchange="filterDirectory()">
+              <option value="" data-i18n="filterVesselName">Semua Nama Kapal</option>
+            </select>
+            <select id="dirFilterStatus" class="form-control" style="width: auto;" onchange="filterDirectory()">
+              <option value="" data-i18n="filterStatus">Semua Status Operasional</option>
+              <option value="ON_BOAT" data-i18n="statusOnBoat">ON_BOAT (Di Atas Kapal)</option>
+              <option value="SELECTED" data-i18n="statusSelected">SELECTED (Terpilih)</option>
+              <option value="STAND_BY" data-i18n="statusStandBy">STAND_BY</option>
+              <option value="ON_BOAT_SELECTED" data-i18n="statusOnBoatSelected">ON_BOAT & SELECTED</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Condensed High Density Table -->
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th data-i18n="colCode">ID KRU</th>
+                <th data-i18n="colName">NAMA CREW</th>
+                <th data-i18n="colRank">JABATAN</th>
+                <th data-i18n="colQual">KUALIFIKASI LONGLINE</th>
+                <th data-i18n="colContact">KONTAK</th>
+                <th data-i18n="colDocs">DOKUMEN EXPIRY ALERT</th>
+                <th data-i18n="colStatus">STATUS VERIFIKASI</th>
+                <th data-i18n="colAction">AKSI</th>
+              </tr>
+            </thead>
+            <tbody id="directoryTableBody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+
+  <!-- MODALS -->
+
+  <!-- 1. ONE-TIME LINK GENERATOR MODAL -->
+  <div class="modal-overlay" id="otlModal">
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeOneTimeLinkModal()">&times;</button>
+      <h2 style="margin-bottom: 6px;" data-i18n="otlModalTitle">Generate One-Time Access Link (Owner Kapal)</h2>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;" data-i18n="otlDesc">Buat link khusus berdurasi terbatas agar Owner Kapal dapat melihat data kru unmasked secara aman.</p>
+
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label data-i18n="targetOwnerLabel">Nama Owner / Perusahaan Sasaran *</label>
+        <input type="text" id="otlOwnerName" class="form-control" placeholder="Capt. Chen (Taiwan Longline)">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label data-i18n="expiryDurationLabel">Masa Berlaku Link *</label>
+        <select id="otlExpiryHours" class="form-control">
+          <option value="24">24 Jam (Standard)</option>
+          <option value="72">3 Hari</option>
+          <option value="168">7 Hari</option>
+          <option value="1">1x Akses (Buka sekali)</option>
+        </select>
+      </div>
+
+      <div id="otlResultBox" style="display: none; background: var(--bg-primary); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md); margin-bottom: 16px;">
+        <label style="font-size: 0.82rem; font-weight: 600; color: var(--primary-container);">Generated One-Time Link:</label>
+        <div style="display: flex; gap: 8px; margin-top: 6px;">
+          <input type="text" id="otlResultUrl" class="form-control" readonly>
+          <button class="btn-primary" onclick="copyOtlUrl()"><i class="fa-solid fa-copy"></i> Salin</button>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn-secondary" onclick="closeOneTimeLinkModal()">Batal</button>
+        <button class="btn-primary" onclick="generateOtlLink()" data-i18n="genLinkBtn">Buat Link Sekarang</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. DELETE CONFIRMATION 2-STEP MODAL -->
+  <div class="modal-overlay" id="deleteConfirmModal">
+    <div class="modal-card" style="max-width: 440px; text-align: center;">
+      <i class="fa-solid fa-triangle-exclamation" style="font-size: 2.8rem; color: var(--status-error); margin-bottom: 10px;"></i>
+      <h3 data-i18n="confirmDeleteTitle" style="margin-bottom: 6px;">Konfirmasi Hapus Data Kru 2-Langkah</h3>
+      <p data-i18n="confirmDeleteDesc" style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">Apakah Anda yakin ingin menghapus data kru ini secara permanen?</p>
+
+      <input type="hidden" id="deleteTargetId">
+      <div style="display: flex; justify-content: center; gap: 12px;">
+        <button class="btn-secondary" onclick="closeDeleteModal()">Batal</button>
+        <button id="confirmDeleteCrewButton" class="btn-primary" style="background: var(--status-error); border-color: var(--status-error);" onclick="executeDeleteCrew()">Ya, Hapus Permanen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. GOOGLE SETUP MODAL -->
+  <div class="modal-overlay" id="gasSetupModal">
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeGasModal()">&times;</button>
+      <h2 style="margin-bottom: 6px;" data-i18n="gasModalTitle">Pengaturan Koneksi Google Sheets & Drive</h2>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;" data-i18n="gasModalDesc">Hubungkan web app ini langsung dengan Google Spreadsheet dan Google Drive Anda.</p>
+
+      <div style="background: var(--bg-primary); border: 1px solid var(--border-subtle); padding: 14px; border-radius: var(--radius-md); font-size: 0.82rem; margin-bottom: 16px; line-height: 1.6;">
+        <p data-i18n="gasStep1">1. Buka Google Sheet baru Anda.</p>
+        <p data-i18n="gasStep2">2. Klik menu Extensi -> Apps Script.</p>
+        <p data-i18n="gasStep3">3. Salin kode dari file google_apps_script.gs di proyek ini lalu paste ke editor Script.</p>
+        <p data-i18n="gasStep4">4. Deploy sebagai Web App (Akses: Anyone / Siapa Saja).</p>
+        <p data-i18n="gasStep5">5. Tempelkan Web App URL yang Anda dapatkan di bawah ini:</p>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label data-i18n="gasUrlLabel">Google Apps Script Web App URL:</label>
+        <input type="url" id="gasUrlInput" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn-secondary" onclick="closeGasModal()">Batal</button>
+        <button class="btn-primary" onclick="saveGasUrl()" data-i18n="saveGasBtn">Simpan & Hubungkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. CAMERA MODAL -->
+  <div class="modal-overlay" id="cameraModal">
+    <div class="modal-card" style="max-width: 480px; text-align: center;">
+      <button class="modal-close-btn" onclick="closeCameraModal()">&times;</button>
+      <h3 style="margin-bottom: 14px;"><i class="fa-solid fa-camera"></i> Kamera Dokumen</h3>
+      <video id="cameraVideo" autoplay playsinline style="width: 100%; border-radius: var(--radius-md); background: #000; height: 250px; object-fit: cover;"></video>
+      <canvas id="cameraCanvas" style="display: none;"></canvas>
+      <div style="margin-top: 14px; display: flex; justify-content: center; gap: 10px;">
+        <button class="btn-secondary" onclick="closeCameraModal()">Batal</button>
+        <button class="btn-primary" onclick="takeCameraSnap()"><i class="fa-solid fa-circle-dot"></i> Ambil Foto</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. IMAGE PREVIEW MODAL WITH WATERMARK LAYER -->
+  <div class="modal-overlay" id="imagePreviewModal">
+    <div class="modal-card image-preview-card">
+      <button class="modal-close-btn" onclick="closeImagePreview()" style="color:#fff;">&times;</button>
+      <div class="image-preview-stage">
+        <button id="imagePreviewPrev" class="image-preview-nav image-preview-prev" type="button" onclick="navigateImagePreview(-1)" aria-label="Dokumen sebelumnya" title="Dokumen sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
+        <img id="enlargedImage" src="" alt="Preview dokumen kru">
+        <iframe id="enlargedPdf" src="" style="width: 100%; height: 70vh; display: none; border-radius: 8px;" frameborder="0"></iframe>
+        <div class="watermark-overlay-text" id="watermarkOverlay">CONFIDENTIAL FOR MARITIME AUTHORITY</div>
+        <button id="imagePreviewNext" class="image-preview-nav image-preview-next" type="button" onclick="navigateImagePreview(1)" aria-label="Dokumen berikutnya" title="Dokumen berikutnya"><i class="fa-solid fa-chevron-right"></i></button>
+      </div>
+      <div class="image-preview-toolbar">
+        <span id="imagePreviewCaption">Dokumen kru</span>
+        <span id="imagePreviewCounter" aria-live="polite"></span>
+        <button class="image-preview-download" type="button" onclick="downloadCurrentPreview()" title="Unduh dokumen"><i class="fa-solid fa-download"></i><span>Unduh</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. EXCEL IMPORT PREVIEW MODAL -->
+  <div class="modal-overlay" id="excelPreviewModal">
+    <div class="modal-card" style="max-width: 860px; width: 95%;">
+      <button class="modal-close-btn" onclick="closeExcelPreview()">&times;</button>
+      <h3 style="display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-file-excel" style="color: var(--status-success);"></i> <span>Smart Import V2 Preview & Verification</span></h3>
+      
+      <div id="excelPreviewStats" style="margin: 15px 0 10px; padding: 12px 16px; background: var(--bg-surface-dim); border-radius: 8px; font-size: 0.88rem;">
+        <!-- Summary Stats filled by JS -->
+      </div>
+
+      <!-- Filter Buttons Bar -->
+      <div id="excelPreviewFilterBar" style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center;">
+        <button type="button" class="btn-secondary active" id="btnFilterAll" onclick="filterPreviewTab('ALL')" style="padding: 5px 12px; font-size: 0.8rem; border-radius: 16px;">Semua (<span id="cntAll">0</span>)</button>
+        <button type="button" class="btn-secondary" id="btnFilterUpdate" onclick="filterPreviewTab('UPDATE')" style="padding: 5px 12px; font-size: 0.8rem; border-radius: 16px; color: #38bdf8; border-color: #38bdf8;">UPDATE (<span id="cntUpdate">0</span>)</button>
+        <button type="button" class="btn-secondary" id="btnFilterRejoin" onclick="filterPreviewTab('REJOIN')" style="padding: 5px 12px; font-size: 0.8rem; border-radius: 16px; color: #a855f7; border-color: #a855f7;">REJOIN (<span id="cntRejoin">0</span>)</button>
+        <button type="button" class="btn-secondary" id="btnFilterAppend" onclick="filterPreviewTab('APPEND')" style="padding: 5px 12px; font-size: 0.8rem; border-radius: 16px; color: #10b981; border-color: #10b981;">APPEND (<span id="cntAppend">0</span>)</button>
+        <button type="button" class="btn-secondary" id="btnFilterHold" onclick="filterPreviewTab('HOLD')" style="padding: 5px 12px; font-size: 0.8rem; border-radius: 16px; color: #f59e0b; border-color: #f59e0b;">HOLD (<span id="cntHold">0</span>)</button>
+      </div>
+
+      <!-- HOLD Safety Notice Box -->
+      <div id="excelHoldNotice" style="font-size: 0.82rem; color: #fbbf24; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); padding: 9px 14px; border-radius: 6px; margin-bottom: 12px; display: none;">
+        <i class="fa-solid fa-triangle-exclamation"></i> <strong>Catatan Pengamanan:</strong> Conflict records are excluded from automatic import and require manual review.
+      </div>
+
+      <!-- Itemized Table View -->
+      <div id="excelPreviewTableContainer" style="max-height: 260px; overflow-y: auto; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 8px;">
+        <table class="data-table" style="width: 100%; font-size: 0.82rem; border-collapse: collapse;">
+          <thead>
+            <tr style="background: var(--bg-surface-dim); position: sticky; top: 0; z-index: 2; border-bottom: 1px solid var(--border-color);">
+              <th style="padding: 8px; width: 35px; text-align: center;">No</th>
+              <th style="padding: 8px;">Nama Kru</th>
+              <th style="padding: 8px;">Crew ID</th>
+              <th style="padding: 8px;">Passport / CDC</th>
+              <th style="padding: 8px; text-align: center;">Action</th>
+              <th style="padding: 8px;">Alasan Matching</th>
+            </tr>
+          </thead>
+          <tbody id="excelPreviewTbody">
+            <!-- Populated dynamically by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div id="excelImportProgressContainer" style="display: none; margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+          <span id="excelProgressText" style="font-weight: bold; font-size: 0.88rem;">Memproses Smart Import...</span>
+          <span id="excelProgressPercentage" style="font-weight: bold; font-size: 0.88rem;">0%</span>
+        </div>
+        <div style="width: 100%; background: var(--bg-surface-dim); border-radius: 8px; height: 10px; overflow: hidden; border: 1px solid var(--border-color);">
+          <div id="excelProgressBar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s;"></div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;" id="excelPreviewButtons">
+        <button class="btn-secondary" onclick="closeExcelPreview()">Batal</button>
+        <button class="btn-primary" id="btnConfirmImportSubmit" onclick="confirmExcelImport()"><i class="fa-solid fa-cloud-arrow-up"></i> Konfirmasi Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6B. EXCEL IMPORT RESULT MODAL -->
+  <div class="modal-overlay" id="excelResultModal" style="z-index: 26000;">
+    <div class="modal-card" style="max-width: 860px; width: 95%;">
+      <button class="modal-close-btn" onclick="closeExcelResultModal()">&times;</button>
+      <h3 style="display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-circle-check" style="color: var(--status-success);"></i> <span>Smart Import V2 Complete</span></h3>
+      
+      <div id="excelResultStatsSummary" style="margin: 15px 0 12px; padding: 14px; background: var(--bg-surface-dim); border-radius: 8px; font-size: 0.88rem;">
+        <!-- Summary counts populated by JS -->
+      </div>
+
+      <div style="max-height: 280px; overflow-y: auto; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 8px;">
+        <table class="data-table" style="width: 100%; font-size: 0.82rem; border-collapse: collapse;">
+          <thead>
+            <tr style="background: var(--bg-surface-dim); position: sticky; top: 0; z-index: 2; border-bottom: 1px solid var(--border-color);">
+              <th style="padding: 8px; width: 35px; text-align: center;">No</th>
+              <th style="padding: 8px;">Nama Kru</th>
+              <th style="padding: 8px; text-align: center;">Action</th>
+              <th style="padding: 8px; text-align: center;">Hasil</th>
+              <th style="padding: 8px;">Crew ID</th>
+              <th style="padding: 8px;">Pesan Status</th>
+            </tr>
+          </thead>
+          <tbody id="excelResultTbody">
+            <!-- Populated dynamically by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button class="btn-primary" onclick="closeExcelResultModal()"><i class="fa-solid fa-check"></i> Selesai & Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. CREW DETAIL & OPERATIONAL STATUS MANAGEMENT MODAL -->
+  <div class="modal-overlay" id="crewDetailModal">
+    <div class="modal-card" style="max-width: 940px; width: 95%; max-height: 90vh; overflow-y: auto; padding: 24px;">
+      <button class="modal-close-btn" onclick="closeCrewDetailModal()">&times;</button>
+      
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 20px;">
+        <h2 style="font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 10px; margin: 0;">
+          <i class="fa-solid fa-user-gear"></i> <span id="detailModalTitle">Profile & Operational Status</span>
+        </h2>
+        <span id="detailSubmisiBadge" style="background: var(--surface-variant); padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">ID: -</span>
+      </div>
+
+      <div class="crew-detail-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        
+        <!-- LEFT COLUMN: INFORMASI KANDIDAT LENGKAP -->
+        <div style="background: var(--bg-primary); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <h3 style="font-size: 0.95rem; color: var(--primary); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-address-card"></i> <span data-i18n="detailCandidateData">Data Lengkap Kandidat</span>
+          </h3>
+          
+          <div id="detailInfoContent" style="font-size: 0.85rem; line-height: 1.6;">
+            <!-- Filled dynamically by JS -->
+          </div>
+
+          <h4 style="font-size: 0.88rem; color: var(--primary); margin-top: 16px; margin-bottom: 8px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+            <i class="fa-solid fa-file-shield"></i> <span data-i18n="detailUploadedDocs">Berkas Dokumen Terunggah</span>
+          </h4>
+          <div id="detailDocList" style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <!-- Filled dynamically by JS -->
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: KONTROL OPERASIONAL ADMIN -->
+        <div style="background: rgba(15, 23, 42, 0.02); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <h3 style="font-size: 0.95rem; color: var(--primary); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-sliders"></i> <span data-i18n="detailOperationalManagement">Status Operasional & Manajemen Admin</span>
+          </h3>
+          
+          <!-- OPSI STATUS KRU -->
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label style="font-weight: 700; font-size: 0.85rem; color: var(--primary); margin-bottom: 6px; display: block;">
+              <span data-i18n="detailCrewStatus">Status Kru (Penempatan / Keberadaan):</span>
+            </label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <label class="status-radio-option" style="display:flex; align-items:center; gap:6px; padding:8px 10px; border:1px solid var(--border-color); border-radius:8px; cursor:pointer; font-size:0.82rem; font-weight:600; background:var(--surface);">
+                <input type="radio" name="crewOpStatus" value="STAND_BY">
+                <span data-i18n="detailStatusStandby">🟢 Stand By</span>
+              </label>
+              <label class="status-radio-option" style="display:flex; align-items:center; gap:6px; padding:8px 10px; border:1px solid var(--border-color); border-radius:8px; cursor:pointer; font-size:0.82rem; font-weight:600; background:var(--surface);">
+                <input type="radio" name="crewOpStatus" value="ON_BOAT">
+                <span data-i18n="detailStatusOnBoat">🔵 On Boat</span>
+              </label>
+              <label class="status-radio-option" style="display:flex; align-items:center; gap:6px; padding:8px 10px; border:1px solid var(--border-color); border-radius:8px; cursor:pointer; font-size:0.82rem; font-weight:600; background:var(--surface);">
+                <input type="radio" name="crewOpStatus" value="SELECTED">
+                <span data-i18n="detailStatusSelected">🟣 Terpilih</span>
+              </label>
+              <label class="status-radio-option" style="display:flex; align-items:center; gap:6px; padding:8px 10px; border:1px solid var(--border-color); border-radius:8px; cursor:pointer; font-size:0.82rem; font-weight:600; background:var(--surface);">
+                <input type="radio" name="crewOpStatus" value="BLACKLIST">
+                <span data-i18n="detailStatusBlacklist">🔴 Blacklist</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- KANDIDAT KAPAL -->
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label style="font-size: 0.8rem; font-weight: 600;" data-i18n="detailVesselCandidate">Kandidat Kapal (Plotting Owner):</label>
+            <input type="text" id="detailVesselCandidate" class="form-control" placeholder="E.g. FV SHENG BAO FA 88">
+          </div>
+
+          <!-- NAMA KAPAL TERPASANG -->
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label style="font-size: 0.8rem; font-weight: 600;" data-i18n="detailVesselAssigned">Nama Kapal Aktif / Penempatan:</label>
+            <input type="text" id="detailVesselAssigned" class="form-control" placeholder="E.g. FU YUAN YU 888">
+          </div>
+
+          <!-- TANGGAL TERBANG & FINISH -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+            <div class="form-group">
+              <label style="font-size: 0.8rem; font-weight: 600;" data-i18n="detailFlightDate">Tanggal Terbang (Sign On):</label>
+              <input type="date" id="detailFlightDate" class="form-control">
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.8rem; font-weight: 600;" data-i18n="detailFinishDate">Tanggal Finish (Sign Off):</label>
+              <input type="date" id="detailFinishDate" class="form-control">
+            </div>
+          </div>
+
+          <!-- RIWAYAT STATUS (HISTORY RECORD) -->
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label style="font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; display: block;" data-i18n="detailHistory">Riwayat Status (History Record):</label>
+            <select id="detailHistoryStatus" class="form-control">
+              <option value="" data-i18n="detailHistoryPlaceholder">-- Pilih Riwayat Status --</option>
+              <option value="FINISH" data-i18n="detailHistoryFinish">Finish (Selesai Kontrak)</option>
+              <option value="BROKEN" data-i18n="detailHistoryBroken">Broken (Putus Kontrak / Retur)</option>
+              <option value="BLACKLIST" data-i18n="detailHistoryBlacklist">Blacklist (Bermasalah / Cekal)</option>
+            </select>
+          </div>
+
+          <!-- CATATAN KHUSUS ADMIN -->
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label style="font-size: 0.8rem; font-weight: 600;" data-i18n="detailAdminNotes">Catatan Khusus Admin:</label>
+            <textarea id="detailAdminNotes" class="form-control" rows="2" data-i18n-placeholder="detailAdminNotesPlaceholder" placeholder="Catatan riwayat performa, perilaku, medis..."></textarea>
+          </div>
+
+          <!-- TOMBOL AKSI UTAMA MODAL -->
+          <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px;">
+            <button class="btn-secondary" onclick="triggerPrintFromDetail()"><i class="fa-solid fa-print"></i> <span data-i18n="detailPrintCv">Cetak CV</span></button>
+            <button id="saveCrewStatusButton" class="btn-primary" onclick="saveCrewOperationalStatus()"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="detailSaveStatus">Simpan Status</span></button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <!-- 4. SUPER ADMIN AUDIT TRAIL HISTORY MODAL -->
+  <div class="modal-overlay" id="auditLogModal">
+    <div class="modal-card" style="max-width: 920px; width: 95%;">
+      <button class="modal-close-btn" onclick="closeAuditLogModal()">&times;</button>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <h2><i class="fa-solid fa-clock-rotate-left" style="color: var(--accent);"></i> Catatan Riwayat Audit Aksi (Super Admin)</h2>
+        <button class="btn-secondary" onclick="loadAuditLogs()"><i class="fa-solid fa-arrows-rotate"></i> Refresh Log</button>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
+        <input type="text" id="auditLogSearch" class="form-control" style="flex: 1; min-width: 200px;" placeholder="Cari aksi, user, ID kru, atau rincian..." onkeyup="renderAuditLogs()">
+        <select id="auditLogFilterAction" class="form-control" style="width: auto;" onchange="renderAuditLogs()">
+          <option value="">Semua Jenis Aksi</option>
+          <option value="INPUT_CREW">INPUT (Tambah Kru Baru)</option>
+          <option value="UPDATE_CREW">UPDATE (Edit Data Kru)</option>
+          <option value="DELETE_CREW">DELETE (Hapus Kru)</option>
+          <option value="UPDATE_STATUS">STATUS CHANGE (Perubahan Status)</option>
+          <option value="LOGIN_SUCCESS">LOGIN (Masuk Sistem)</option>
+        </select>
+      </div>
+
+      <div class="table-responsive" style="max-height: 440px; overflow-y: auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 170px;">WAKTU (TIMESTAMP)</th>
+              <th style="width: 130px;">AKSI</th>
+              <th style="width: 140px;">USER / ROLE</th>
+              <th style="width: 160px;">TARGET / ID KRU</th>
+              <th>RINCIAN PERUBAHAN</th>
+            </tr>
+          </thead>
+          <tbody id="auditLogTableBody">
+            <tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">Memuat riwayat log audit...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12. SUPER ADMIN USER MANAGEMENT MODAL -->
+  <div class="modal-overlay" id="userManagementModal" style="z-index: 25000;">
+    <div class="modal-card" style="max-width: 780px; width: 95%;">
+      <button class="modal-close-btn" onclick="closeUserManagementModal()">&times;</button>
+      <h3 style="margin-bottom: 6px; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-users-gear" style="color: #c084fc;"></i> <span>Kelola User & Password (Super Admin)</span></h3>
+      <p style="color: var(--text-muted); font-size: 0.84rem; margin-bottom: 16px;">Tambah user baru, perbarui password, atau kelola kredensial pengguna aplikasi.</p>
+
+      <form onsubmit="saveUserFromModal(event)" style="background: var(--bg-surface-dim); padding: 16px; border-radius: 8px; margin-bottom: 18px; border: 1px solid var(--border-color);">
+        <input type="hidden" id="userMgmtId" value="">
+        <h4 id="userFormTitle" style="margin-bottom: 12px; font-size: 0.92rem; color: var(--accent);"><i class="fa-solid fa-user-plus"></i> Tambah User Baru</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 4px;"><i class="fa-solid fa-user"></i> Username *</label>
+            <input type="text" id="userMgmtUsername" class="form-control" placeholder="Contoh: admin2" required style="padding: 8px 12px; font-size: 0.85rem; width: 100%;">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 4px;"><i class="fa-solid fa-key"></i> Password *</label>
+            <input type="password" id="userMgmtPassword" class="form-control" placeholder="Password baru" required style="padding: 8px 12px; font-size: 0.85rem; width: 100%;">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 4px;"><i class="fa-solid fa-shield-halved"></i> Peran (Role) *</label>
+            <select id="userMgmtRole" class="form-control" style="padding: 8px 12px; font-size: 0.85rem; width: 100%;">
+              <option value="admin">Admin Manning Agency</option>
+              <option value="superadmin">Super Admin</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" class="btn-secondary" onclick="resetUserForm()" style="padding: 6px 14px; font-size: 0.82rem;">Batal / Reset</button>
+          <button type="submit" class="btn-primary" style="padding: 6px 16px; font-size: 0.82rem;"><i class="fa-solid fa-floppy-disk"></i> Simpan User</button>
+        </div>
+      </form>
+
+      <div style="max-height: 240px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+        <table class="data-table" style="width: 100%; font-size: 0.82rem; border-collapse: collapse;">
+          <thead>
+            <tr style="background: var(--bg-surface-dim); position: sticky; top: 0; z-index: 2; border-bottom: 1px solid var(--border-color);">
+              <th style="padding: 8px; width: 35px; text-align: center;">No</th>
+              <th style="padding: 8px;">Username</th>
+              <th style="padding: 8px;">Role</th>
+              <th style="padding: 8px;">Status Login</th>
+              <th style="padding: 8px; text-align: center;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="userManagementTbody">
+            <!-- Filled by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="i18n.js?v=20260823.3"></script>
+  <script src="js/config.js?v=20260823.3"></script>
+  <!-- Floating Quick Login Button -->
+  <button type="button" id="floatingLoginBtn" onclick="openLoginModal()" style="position: fixed; bottom: 20px; left: 20px; z-index: 999; background: var(--primary); color: #ffffff; border: none; padding: 10px 18px; border-radius: 30px; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; gap: 8px;">
+    <i class="fa-solid fa-user-lock"></i> <span>Login Username & Password</span>
+  </button>
+
+  <div id="appNotificationRegion" class="app-notification-region" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="js/api.js?v=20260823.17"></script>
+  <script src="js/ui-components.js?v=20260823.17"></script>
+  <script src="js/auth.js?v=20260823.17"></script>
+  <script src="js/candidate.js?v=20260823.17"></script>
+  <script src="js/owner.js?v=20260823.17"></script>
+  <script src="js/admin.js?v=20260823.17"></script>
+  <script src="js/app.js?v=20260823.17"></script>
+</body>
+</html>
