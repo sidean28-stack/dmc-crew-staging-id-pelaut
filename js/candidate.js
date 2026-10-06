@@ -78,6 +78,7 @@ function validateStep(step) {
     const passportNo = document.getElementById('passportNo').value.trim();
     const passportExp = document.getElementById('passportExpiry').value;
     const cdcNo = document.getElementById('cdcNo').value.trim();
+    const idPelaut = document.getElementById('idPelaut').value.trim();
     const cdcExp = document.getElementById('cdcExpiry').value;
     return passportNo && passportExp && cdcNo && cdcExp;
   }
@@ -105,6 +106,7 @@ function renderReviewSummary() {
       <p><strong>Kualifikasi Longline:</strong> ${escapeHTML(data.expLongline)}</p>
       <p><strong>Paspor:</strong> ${escapeHTML(data.passportNo)} (Exp: ${escapeHTML(formatDisplayDate(data.passportExpiry))})</p>
       <p><strong>Buku Pelaut:</strong> ${escapeHTML(data.cdcNo)} (Exp: ${escapeHTML(formatDisplayDate(data.cdcExpiry))})</p>
+      <p><strong>ID Pelaut:</strong> ${escapeHTML(data.idPelaut || "-")}</p>
     </div>
   `;
 }
@@ -179,6 +181,7 @@ function getFormData() {
     passportNo: document.getElementById('passportNo').value.trim(),
     passportExpiry: document.getElementById('passportExpiry').value,
     cdcNo: document.getElementById('cdcNo').value.trim(),
+    idPelaut: document.getElementById('idPelaut').value.trim(),
     cdcExpiry: document.getElementById('cdcExpiry').value,
     bstExpiry: document.getElementById('bstExpiry').value,
     kkStatus: document.getElementById('kkStatus').value,

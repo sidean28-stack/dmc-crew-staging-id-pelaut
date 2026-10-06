@@ -276,7 +276,7 @@ function editCrew(submissionId) {
   window.editingSubmissionId = submissionId;
   if (typeof switchTab === 'function') switchTab('form');
 
-  const fields = ['fullName', 'chineseName', 'rankPosition', 'gender', 'pob', 'dob', 'religion', 'maritalStatus', 'bloodType', 'shirtSize', 'shoeSize', 'streetAddress', 'rtRw', 'village', 'district', 'city', 'province', 'phoneNo', 'fam1Name', 'fam1Relation', 'fam1Phone', 'fam2Name', 'fam2Relation', 'fam2Phone', 'vesselName1', 'signOnOff1', 'placementCountry1', 'vesselName2', 'signOnOff2', 'placementCountry2', 'vesselName3', 'signOnOff3', 'placementCountry3', 'vesselName', 'vesselTypeLongline', 'vesselOrigin', 'placementCountry', 'passportNo', 'passportExpiry', 'cdcNo', 'cdcExpiry', 'bstExpiry', 'kkStatus', 'akteStatus', 'ijazahLevel', 'medicalStatus', 'waliStatus', 'skckStatus', 'heightCm', 'weightKg'];
+  const fields = ['fullName', 'chineseName', 'rankPosition', 'gender', 'pob', 'dob', 'religion', 'maritalStatus', 'bloodType', 'shirtSize', 'shoeSize', 'streetAddress', 'rtRw', 'village', 'district', 'city', 'province', 'phoneNo', 'fam1Name', 'fam1Relation', 'fam1Phone', 'fam2Name', 'fam2Relation', 'fam2Phone', 'vesselName1', 'signOnOff1', 'placementCountry1', 'vesselName2', 'signOnOff2', 'placementCountry2', 'vesselName3', 'signOnOff3', 'placementCountry3', 'vesselName', 'vesselTypeLongline', 'vesselOrigin', 'placementCountry', 'passportNo', 'passportExpiry', 'cdcNo', 'cdcExpiry', 'idPelaut', 'bstExpiry', 'kkStatus', 'akteStatus', 'ijazahLevel', 'medicalStatus', 'waliStatus', 'skckStatus', 'heightCm', 'weightKg'];
 
   fields.forEach(id => {
     const el = document.getElementById(id);
